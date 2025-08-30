@@ -62,6 +62,16 @@
                 renderApp(appState, document.getElementById('root'));
             }
         });
+
+        // 將所有 Firebase 相關函式暴露給全局
+        window.firebaseFunctions = {
+            signInWithEmailAndPassword,
+            createUserWithEmailAndPassword,
+            signOut,
+            sendPasswordResetEmail,
+            setDoc,
+            doc
+        };
     </script>
     <script>
         tailwind.config = {
@@ -240,7 +250,7 @@
         document.getElementById('register-btn')?.addEventListener('click', () => showModal('register'));
         document.getElementById('logout-btn')?.addEventListener('click', async () => {
             try {
-                await window.auth.signOut();
+                await window.firebaseFunctions.signOut(window.auth);
                 showMessageModal('登出成功');
             } catch (error) {
                 showMessageModal(`登出失敗: ${error.message}`);
@@ -269,11 +279,7 @@
             const email = e.target.email.value;
             const password = e.target.password.value;
             try {
-                // 檢查函式是否存在
-                if (typeof signInWithEmailAndPassword === 'undefined') {
-                    throw new Error("signInWithEmailAndPassword 函式未定義，請檢查 Firebase 載入狀態。");
-                }
-                await signInWithEmailAndPassword(window.auth, email, password);
+                await window.firebaseFunctions.signInWithEmailAndPassword(window.auth, email, password);
                 showMessageModal('登入成功！', () => hideModal());
             } catch (error) {
                 showMessageModal(`登入失敗: ${error.message}`);
@@ -292,14 +298,10 @@
             const address = e.target.address.value;
             
             try {
-                // 檢查函式是否存在
-                if (typeof createUserWithEmailAndPassword === 'undefined') {
-                    throw new Error("createUserWithEmailAndPassword 函式未定義，請檢查 Firebase 載入狀態。");
-                }
-                const userCredential = await createUserWithEmailAndPassword(window.auth, email, password);
+                const userCredential = await window.firebaseFunctions.createUserWithEmailAndPassword(window.auth, email, password);
                 const user = userCredential.user;
                 
-                await setDoc(doc(window.db, 'users', user.uid), {
+                await window.firebaseFunctions.setDoc(window.firebaseFunctions.doc(window.db, 'users', user.uid), {
                     name,
                     nickname,
                     phone,
@@ -318,11 +320,7 @@
             e.preventDefault();
             const email = e.target.email.value;
             try {
-                // 檢查函式是否存在
-                if (typeof sendPasswordResetEmail === 'undefined') {
-                    throw new Error("sendPasswordResetEmail 函式未定義，請檢查 Firebase 載入狀態。");
-                }
-                await sendPasswordResetEmail(window.auth, email);
+                await window.firebaseFunctions.sendPasswordResetEmail(window.auth, email);
                 showMessageModal('密碼重設郵件已寄送，請檢查您的信箱！', () => hideModal());
             } catch (error) {
                 showMessageModal(`密碼重設失敗: ${error.message}`);
