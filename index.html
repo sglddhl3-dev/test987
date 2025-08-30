@@ -1,181 +1,224 @@
 import React, { useState } from 'react';
 
-// 模擬資料：關於我
-const aboutData = {
-  title: "關於我：一位熱愛旅行與美食的探險家",
-  content: "嗨！我是您的美食與旅遊嚮導。我堅信旅行是最好的學習，而品嚐當地美食則是了解文化的最佳途徑。這個部落格記錄了我的每一段旅程，從偏遠山區的靜謐小鎮到大都市的喧囂街頭，以及那些讓我回味無窮的美味佳餚。希望我的分享能為您的下一趟旅程帶來靈感！"
-};
-
-// 模擬資料：照片
-const photosData = [
-  { id: 1, src: "https://placehold.co/800x600/E8E8E8/4D4D4D?text=風景照+1", alt: "山間風景" },
-  { id: 2, src: "https://placehold.co/800x600/F0E6D3/4D4D4D?text=美食+1", alt: "精緻甜點" },
-  { id: 3, src: "https://placehold.co/800x600/C8D6E5/4D4D4D?text=街景+1", alt: "歐洲街頭" },
-  { id: 4, src: "https://placehold.co/800x600/B2D8B2/4D4D4D?text=美食+2", alt: "道地小吃" },
-  { id: 5, src: "https://placehold.co/800x600/FFC999/4D4D4D?text=風景照+2", alt: "海邊日落" },
-  { id: 6, src: "https://placehold.co/800x600/D4B8B8/4D4D4D?text=街景+2", alt: "異國市集" },
-];
-
-// 模擬資料：分享文章
-const blogPosts = [
-  {
-    id: 1,
-    category: '食記',
-    title: '台北老字號牛肉麵：味道與回憶的交織',
-    date: '2024年10月26日',
-    rating: 5, // 評分
-    content: "這家隱身於巷弄內的牛肉麵店，每當夜幕低垂，總能聞到濃郁的湯頭香氣。麵條Q彈，牛肉燉得軟嫩入味，配上一口熱湯，所有疲憊都一掃而空。這不僅僅是一碗麵，更是許多人記憶中的味道。",
-    imageUrl: 'https://placehold.co/1000x500/F0E6D3/4D4D4D?text=牛肉麵照片'
-  },
-  {
-    id: 2,
-    category: '遊記',
-    title: '台東海岸線之旅：湛藍太平洋與風的輕語',
-    date: '2024年10月15日',
-    rating: 4.5, // 評分
-    content: "騎著機車沿著台東的海岸線馳騁，一邊是壯闊的山脈，一邊是浩瀚的太平洋。海風輕拂，浪花拍打著岸邊的礁石，彷彿在訴說著古老的故事。在這裡，時間彷彿慢了下來，讓人能夠真正享受當下的寧靜。",
-    imageUrl: 'https://placehold.co/1000x500/C8D6E5/4D4D4D?text=台東海岸線照片'
-  },
-  {
-    id: 3,
-    category: '食記',
-    title: '京都抹茶之旅：味蕾與心靈的雙重饗宴',
-    date: '2024年9月28日',
-    rating: 4, // 評分
-    content: "來到京都，怎能不品嚐道地的抹茶？從濃郁的抹茶冰淇淋到精緻的抹茶甜點，每一口都充滿了日式禪意。在這裡，品嚐美食不僅僅是享受，更是一種藝術。",
-    imageUrl: 'https://placehold.co/1000x500/B2D8B2/4D4D4D?text=京都抹茶照片'
-  },
-];
-
-// 評分星級元件
-const StarRating = ({ rating }) => {
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 !== 0;
+// 定義一個簡單的評分元件，使用 SVG 來顯示星星
+const Rating = ({ score }) => {
+  const roundedScore = Math.round(score * 2) / 2;
   const stars = [];
+  for (let i = 1; i <= 5; i++) {
+    const isHalf = i - 0.5 === roundedScore;
+    const isFull = i <= roundedScore;
+    let color = 'text-gray-300';
+    if (isFull) {
+      color = 'text-yellow-400';
+    } else if (isHalf) {
+      color = 'text-yellow-400';
+    }
 
-  for (let i = 0; i < fullStars; i++) {
-    stars.push(<span key={`full-${i}`} className="text-yellow-400">★</span>);
+    stars.push(
+      <svg
+        key={i}
+        className={`w-5 h-5 fill-current ${color}`}
+        viewBox="0 0 24 24"
+        style={{ filter: isHalf ? 'url(#half-star)' : '' }}
+      >
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      </svg>
+    );
   }
-  if (hasHalfStar) {
-    stars.push(<span key="half" className="text-yellow-400">★</span>); // 簡化處理，用一顆星表示半星
-  }
-  return <div className="flex text-lg">{stars}</div>;
+
+  return (
+    <div className="flex items-center space-x-1">
+      {stars}
+      {/* 定義半星的遮罩 */}
+      <svg width="0" height="0">
+        <defs>
+          <linearGradient id="half-star">
+            <stop offset="50%" stopColor="#facc15" />
+            <stop offset="50%" stopColor="#d1d5db" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
 };
 
-// 關於我頁面
-const AboutPage = () => (
-  <div className="bg-white p-8 md:p-12 lg:p-16 rounded-3xl shadow-lg border border-gray-100">
-    <h1 className="text-4xl md:text-5xl font-bold mb-4 md:mb-6 text-gray-800 tracking-tight">{aboutData.title}</h1>
-    <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
-      {aboutData.content}
-    </p>
-  </div>
-);
-
-// 照片牆頁面
-const PhotosPage = () => (
-  <div className="p-4 md:p-8 bg-white rounded-3xl shadow-lg border border-gray-100">
-    <h1 className="text-4xl md:text-5xl font-bold mb-8 text-center text-gray-800 tracking-tight">攝影集</h1>
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-      {photosData.map(photo => (
-        <div key={photo.id} className="w-full aspect-square overflow-hidden rounded-2xl transition-transform transform hover:scale-105 hover:shadow-2xl">
-          <img src={photo.src} alt={photo.alt} className="w-full h-full object-cover" />
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-// 分享/部落格頁面
-const BlogPage = () => (
-  <div className="p-4 md:p-8 bg-white rounded-3xl shadow-lg border border-gray-100">
-    <h1 className="text-4xl md:text-5xl font-bold mb-8 text-center text-gray-800 tracking-tight">最新分享</h1>
-    <div className="space-y-12">
-      {blogPosts.map(post => (
-        <div key={post.id} className="flex flex-col md:flex-row bg-gray-50 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300">
-          <div className="w-full md:w-1/3 aspect-video md:aspect-auto">
-            <img src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
-          </div>
-          <div className="p-6 md:p-8 w-full md:w-2/3 flex flex-col justify-between">
-            <div>
-              <span className="inline-block bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-1 rounded-full mb-2">{post.category}</span>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">{post.title}</h2>
-              <div className="text-gray-500 text-sm mb-4">{post.date}</div>
-              <p className="text-gray-600 leading-relaxed mb-4">{post.content}</p>
-            </div>
-            <div className="flex items-center">
-              <span className="text-gray-800 font-semibold mr-2">我的評分：</span>
-              <StarRating rating={post.rating} />
-              <span className="ml-2 text-sm text-gray-500">({post.rating}/5)</span>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
+// 這是主要的 App 元件，包含了所有頁面和邏輯
 const App = () => {
-  // 使用 useState 來管理當前顯示的頁面
-  const [currentPage, setCurrentPage] = useState('blog');
+  // 網站的硬編碼資料
+  const posts = [
+    {
+      id: 1,
+      type: 'travel',
+      title: '京都櫻花之旅：在哲學之道漫步',
+      excerpt: '京都的春天是櫻花的盛會，而在哲學之道上...',
+      content: '京都的春天是櫻花的盛會，而在哲學之道上，沿著蜿蜒的小徑漫步，兩旁櫻花盛開，落英繽紛，彷彿置身於粉色的夢境。我們拜訪了清水寺、金閣寺，也品嚐了道地的京料理。這趟旅程讓身心都得到了療癒。',
+      imageUrl: 'https://placehold.co/800x600/6b7280/ffffff?text=Kyoto+Cherry+Blossoms',
+      rating: 5.0,
+      date: '2024年4月12日',
+    },
+    {
+      id: 2,
+      type: 'food',
+      title: '台北巷弄美食：隱藏版牛肉麵',
+      excerpt: '在台北的大街小巷中，總能發現一些令人驚喜的店家...',
+      content: '在台北的大街小巷中，總能發現一些令人驚喜的店家。這家位於巷弄內的牛肉麵店，湯頭濃郁，牛肉軟嫩入味，麵條Q彈有勁。每一口都充滿了幸福感。老闆熱情好客，店面雖然不大，但充滿了溫馨的氛圍。',
+      imageUrl: 'https://placehold.co/800x600/4b5563/ffffff?text=Taipei+Beef+Noodles',
+      rating: 4.5,
+      date: '2024年5月5日',
+    },
+    {
+      id: 3,
+      type: 'travel',
+      title: '冰島自駕冒險：追尋極光的旅程',
+      excerpt: '在冰島的冰天雪地中，我們駕車穿梭在壯麗的冰川和瀑布之間...',
+      content: '在冰島的冰天雪地中，我們駕車穿梭在壯麗的冰川和瀑布之間，每一步都像走進了國家地理雜誌的畫面。夜晚，我們在極光小屋中，靜靜地等待極光的出現。當綠色的光芒在夜空中舞動時，那種感動是難以言喻的。',
+      imageUrl: 'https://placehold.co/800x600/374151/ffffff?text=Iceland+Aurora',
+      rating: 4.8,
+      date: '2024年3月1日',
+    },
+    {
+      id: 4,
+      type: 'food',
+      title: '巴黎甜點巡禮：馬卡龍與可麗露',
+      excerpt: '巴黎不只是浪漫之都，更是甜點愛好者的天堂...',
+      content: '巴黎不只是浪漫之都，更是甜點愛好者的天堂。這次的甜點巡禮，我們從香榭麗舍大道上的百年老店，吃到巷弄內的小巧甜點店。最令人難忘的是那顆入口即化的馬卡龍，以及外酥內軟的可麗露。',
+      imageUrl: 'https://placehold.co/800x600/1f2937/ffffff?text=Paris+Desserts',
+      rating: 4.9,
+      date: '2024年6月10日',
+    },
+  ];
 
+  // 頁面狀態管理
+  const [currentPage, setCurrentPage] = useState('home');
+  const [selectedPost, setSelectedPost] = useState(null);
+
+  // 導航列元件
+  const Header = () => (
+    <nav className="bg-white p-4 sticky top-0 z-50 shadow-md">
+      <div className="container mx-auto flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800 cursor-pointer" onClick={() => setCurrentPage('home')}>我的遊食日記</h1>
+        <div className="space-x-4">
+          <button className="text-gray-600 hover:text-gray-900 transition" onClick={() => setCurrentPage('home')}>首頁</button>
+          <button className="text-gray-600 hover:text-gray-900 transition" onClick={() => setCurrentPage('about')}>關於我</button>
+          <button className="text-gray-600 hover:text-gray-900 transition" onClick={() => setCurrentPage('posts')}>分享</button>
+        </div>
+      </div>
+    </nav>
+  );
+
+  // 關於我頁面
+  const About = () => (
+    <div className="max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg mt-8 mb-8">
+      <h2 className="text-4xl font-extrabold text-gray-900 mb-6 border-b-2 pb-2">關於我</h2>
+      <div className="flex flex-col md:flex-row items-center md:space-x-8">
+        <div className="flex-shrink-0 mb-6 md:mb-0">
+          <img src="https://placehold.co/200x200/e5e7eb/4b5563?text=My+Photo" alt="個人照片" className="rounded-full w-48 h-48 object-cover shadow-lg" />
+        </div>
+        <div>
+          <p className="text-gray-700 text-lg leading-relaxed mb-4">
+            嗨！我是 [你的名字]，一個熱愛旅行和尋找美食的冒險家。我的旅程不只是為了看見壯麗的風景，更是為了用味蕾感受每個地方獨特的文化與故事。
+          </p>
+          <p className="text-gray-700 text-lg leading-relaxed">
+            這個網站記錄了我走過的每個城市，品嚐過的每道佳餚。我希望這些分享能為你的下一次旅程帶來靈感，或是簡單地為你的一天增添一些美好的想像。期待與你在世界的某個角落相遇！
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // 文章列表中的單篇文章卡片
+  const PostCard = ({ post }) => (
+    <div
+      onClick={() => {
+        setSelectedPost(post);
+        setCurrentPage('postDetail');
+      }}
+      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden cursor-pointer"
+    >
+      <img src={post.imageUrl} alt={post.title} className="w-full h-56 object-cover" />
+      <div className="p-6">
+        <h3 className="text-2xl font-bold text-gray-800 mb-2">{post.title}</h3>
+        <p className="text-sm text-gray-500 mb-4">{post.date}</p>
+        <p className="text-gray-600 line-clamp-3 mb-4">{post.excerpt}</p>
+        <div className="flex justify-between items-center">
+          <Rating score={post.rating} />
+          <span className="text-sm font-semibold text-gray-500">{post.rating.toFixed(1)} / 5</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  // 文章列表頁面
+  const PostList = () => (
+    <div className="container mx-auto p-8">
+      <h2 className="text-4xl font-extrabold text-gray-900 mb-8 text-center">所有分享</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {posts.map(post => (
+          <PostCard key={post.id} post={post} />
+        ))}
+      </div>
+    </div>
+  );
+
+  // 單篇文章詳細頁面
+  const PostDetail = ({ post }) => (
+    <div className="max-w-4xl mx-auto p-8 mt-8 mb-8 bg-white rounded-xl shadow-lg">
+      <div className="flex items-center mb-6 text-gray-600">
+        <button onClick={() => setCurrentPage('posts')} className="flex items-center space-x-2 hover:text-gray-900 transition">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd"></path>
+          </svg>
+          <span>返回分享列表</span>
+        </button>
+      </div>
+
+      <h2 className="text-4xl font-extrabold text-gray-900 mb-4">{post.title}</h2>
+      <div className="flex items-center justify-between mb-6 border-b pb-4">
+        <p className="text-gray-500">{post.date}</p>
+        <div className="flex items-center space-x-2">
+          <Rating score={post.rating} />
+          <span className="text-lg font-semibold text-gray-500">{post.rating.toFixed(1)} / 5</span>
+        </div>
+      </div>
+      <img src={post.imageUrl} alt={post.title} className="w-full rounded-xl object-cover mb-8 shadow-md" />
+      <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">{post.content}</p>
+    </div>
+  );
+
+  // 根據 currentPage 狀態來渲染不同的頁面
   const renderPage = () => {
     switch (currentPage) {
+      case 'home':
+        return (
+          <div className="container mx-auto p-8">
+            <div className="bg-white rounded-xl shadow-lg p-12 text-center my-8">
+              <h2 className="text-5xl font-extrabold text-gray-900 mb-4">歡迎來到我的遊食日記</h2>
+              <p className="text-xl text-gray-600 mb-6">在這裡，我用鏡頭和文字記錄每一次的探索與感動</p>
+              <button
+                onClick={() => setCurrentPage('posts')}
+                className="bg-gray-800 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-gray-700 transition"
+              >
+                開始閱讀
+              </button>
+            </div>
+            <PostList />
+          </div>
+        );
       case 'about':
-        return <AboutPage />;
-      case 'photos':
-        return <PhotosPage />;
-      case 'blog':
+        return <About />;
+      case 'posts':
+        return <PostList />;
+      case 'postDetail':
+        return <PostDetail post={selectedPost} />;
       default:
-        return <BlogPage />;
+        return null;
     }
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen font-sans antialiased text-gray-800 p-4 md:p-8">
-      {/* 網站導航列 */}
-      <nav className="flex justify-center p-4 md:p-6 mb-8 md:mb-12 bg-white rounded-full shadow-lg border border-gray-100 sticky top-4 z-50">
-        <ul className="flex space-x-4 md:space-x-8 text-sm md:text-base font-medium">
-          <li>
-            <button
-              onClick={() => setCurrentPage('blog')}
-              className={`p-2 md:p-3 rounded-full transition-colors duration-200 ${
-                currentPage === 'blog' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              分享
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => setCurrentPage('photos')}
-              className={`p-2 md:p-3 rounded-full transition-colors duration-200 ${
-                currentPage === 'photos' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              照片
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => setCurrentPage('about')}
-              className={`p-2 md:p-3 rounded-full transition-colors duration-200 ${
-                currentPage === 'about' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              關於我
-            </button>
-          </li>
-        </ul>
-      </nav>
-
-      {/* 主要內容區域 */}
-      <main className="max-w-6xl mx-auto py-8">
-        {renderPage()}
-      </main>
-
-      {/* Tailwind CSS CDN script */}
-      <script src="https://cdn.tailwindcss.com"></script>
+    <div className="bg-gray-100 min-h-screen font-sans">
+      <Header />
+      {renderPage()}
     </div>
   );
 };
