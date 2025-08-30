@@ -9,9 +9,23 @@
     <!-- 引入 Firebase CDN -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            onAuthStateChanged, 
+            signOut, 
+            sendPasswordResetEmail 
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            getDoc 
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+        // 引入全局變數
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = {
           apiKey: "AIzaSyDaaqFz6sId0sjz91tM6Vb7WV0DbEb6SNc",
           authDomain: "test98765-42a68.firebaseapp.com",
@@ -37,6 +51,10 @@
                     } else {
                         appState.userData = null;
                     }
+                    renderApp(appState, document.getElementById('root'));
+                }).catch(error => {
+                    console.error("讀取用戶資料失敗:", error);
+                    appState.userData = null;
                     renderApp(appState, document.getElementById('root'));
                 });
             } else {
@@ -251,6 +269,10 @@
             const email = e.target.email.value;
             const password = e.target.password.value;
             try {
+                // 檢查函式是否存在
+                if (typeof signInWithEmailAndPassword === 'undefined') {
+                    throw new Error("signInWithEmailAndPassword 函式未定義，請檢查 Firebase 載入狀態。");
+                }
                 await signInWithEmailAndPassword(window.auth, email, password);
                 showMessageModal('登入成功！', () => hideModal());
             } catch (error) {
@@ -270,6 +292,10 @@
             const address = e.target.address.value;
             
             try {
+                // 檢查函式是否存在
+                if (typeof createUserWithEmailAndPassword === 'undefined') {
+                    throw new Error("createUserWithEmailAndPassword 函式未定義，請檢查 Firebase 載入狀態。");
+                }
                 const userCredential = await createUserWithEmailAndPassword(window.auth, email, password);
                 const user = userCredential.user;
                 
@@ -292,6 +318,10 @@
             e.preventDefault();
             const email = e.target.email.value;
             try {
+                // 檢查函式是否存在
+                if (typeof sendPasswordResetEmail === 'undefined') {
+                    throw new Error("sendPasswordResetEmail 函式未定義，請檢查 Firebase 載入狀態。");
+                }
                 await sendPasswordResetEmail(window.auth, email);
                 showMessageModal('密碼重設郵件已寄送，請檢查您的信箱！', () => hideModal());
             } catch (error) {
