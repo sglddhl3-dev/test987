@@ -1,227 +1,565 @@
-import React, { useState } from 'react';
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>華麗遊記食記分享</title>
+    <!-- 引入 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Firebase CDN -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// 定義一個簡單的評分元件，使用 SVG 來顯示星星
-const Rating = ({ score }) => {
-  const roundedScore = Math.round(score * 2) / 2;
-  const stars = [];
-  for (let i = 1; i <= 5; i++) {
-    const isHalf = i - 0.5 === roundedScore;
-    const isFull = i <= roundedScore;
-    let color = 'text-gray-300';
-    if (isFull) {
-      color = 'text-yellow-400';
-    } else if (isHalf) {
-      color = 'text-yellow-400';
+        const firebaseConfig = {
+          apiKey: "AIzaSyDaaqFz6sId0sjz91tM6Vb7WV0DbEb6SNc",
+          authDomain: "test98765-42a68.firebaseapp.com",
+          projectId: "test98765-42a68",
+          storageBucket: "test98765-42a68.firebasestorage.app",
+          messagingSenderId: "966212828071",
+          appId: "1:966212828071:web:02898ef89b370eee6c1482"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        window.auth = getAuth(app);
+        window.db = getFirestore(app);
+        
+        // 監聽用戶登入狀態
+        onAuthStateChanged(window.auth, (user) => {
+            appState.user = user;
+            if (user) {
+                // 獲取使用者額外資料
+                const userDocRef = doc(window.db, 'users', user.uid);
+                getDoc(userDocRef).then((docSnap) => {
+                    if (docSnap.exists()) {
+                        appState.userData = docSnap.data();
+                    } else {
+                        appState.userData = null;
+                    }
+                    renderApp(appState, document.getElementById('root'));
+                });
+            } else {
+                appState.userData = null;
+                renderApp(appState, document.getElementById('root'));
+            }
+        });
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'playfair': ['Playfair Display', 'serif'],
+                        'montserrat': ['Montserrat', 'sans-serif'],
+                    },
+                    colors: {
+                        'gold-light': '#FCD34D',
+                        'gold-dark': '#B48A30',
+                        'midnight-blue': '#10172A',
+                        'dark-gray': '#374151',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 1s ease-in-out',
+                        'star-pulse': 'starPulse 1.5s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        starPulse: {
+                            '0%, 100%': { transform: 'scale(1)', opacity: '1' },
+                            '50%': { transform: 'scale(1.2)', opacity: '0.8' },
+                        },
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #10172A;
+            color: #E5E7EB;
+        }
+        /* 自定義捲軸樣式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4B5563;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-midnight-blue">
+
+<div id="root" class="container mx-auto p-4 sm:p-8 animate-fade-in"></div>
+<div id="modal-backdrop" class="hidden fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
+    <div id="modal-content" class="bg-dark-gray p-8 rounded-xl shadow-2xl w-full max-w-sm"></div>
+</div>
+
+<script>
+    // 網站的核心數據
+    const siteData = {
+        posts: [
+            {
+                id: 1,
+                title: '京都：在古都的櫻花下品味美食',
+                image: 'https://placehold.co/800x600/1E3A8A/FFFFFF?text=Kyoto+Cherry+Blossoms',
+                author: '旅食家小明',
+                date: '2023年4月15日',
+                content: '在京都的哲學之道，櫻花盛開，落英繽紛。我們在一家隱身在巷弄間的懷石料理店，品嚐到了最地道的京都風味。每一道菜都像是藝術品，完美結合了視覺與味覺的享受。這趟旅程，不僅滿足了眼睛，更餵飽了心靈。',
+                rating: 5,
+                comments: [
+                    { id: 1, user: '美食小仙女', text: '哇！照片看起來好美，那家店叫什麼名字呢？' },
+                    { id: 2, user: '路過旅人', text: '京都的櫻花季真的超棒，這篇分享好實用！' }
+                ]
+            },
+            {
+                id: 2,
+                title: '義大利：一口披薩，一座歷史',
+                image: 'https://placehold.co/800x600/DC2626/FFFFFF?text=Italian+Pizza',
+                author: '老饕阿杰',
+                date: '2023年7月20日',
+                content: '來到義大利，怎麼能不品嚐最正宗的拿坡里披薩？這裡的披薩餅皮Q彈有嚼勁，番茄醬汁濃郁，加上新鮮的Mozzarella起司，每一口都是對歷史的致敬。從羅馬鬥獸場到披薩小店，這趟旅程充滿了歷史與美味的交織。',
+                rating: 4.5,
+                comments: [
+                    { id: 3, user: '美食評論家', text: '我也覺得拿坡里披薩是世界上最棒的披薩！' }
+                ]
+            }
+        ]
+    };
+
+    // React 應用程式的核心渲染函數
+    function renderApp(state, container) {
+        let content;
+        switch (state.page) {
+            case 'about':
+                content = AboutPage();
+                break;
+            case 'post':
+                content = PostPage(state.selectedPost);
+                break;
+            default:
+                content = HomePage();
+                break;
+        }
+        container.innerHTML = content;
+        bindEvents();
     }
 
-    stars.push(
-      <svg
-        key={i}
-        className={`w-5 h-5 fill-current ${color}`}
-        viewBox="0 0 24 24"
-        style={{ filter: isHalf ? 'url(#half-star)' : '' }}
-      >
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-      </svg>
-    );
-  }
+    // 將所有事件綁定集中管理
+    function bindEvents() {
+        // 綁定導航按鈕
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.onclick = (e) => {
+                e.preventDefault();
+                const page = e.target.getAttribute('data-page');
+                if (page) {
+                    setState({ page, selectedPost: null });
+                }
+            };
+        });
 
-  return (
-    <div className="flex items-center space-x-1">
-      {stars}
-      {/* 定義半星的遮罩 */}
-      <svg width="0" height="0">
-        <defs>
-          <linearGradient id="half-star">
-            <stop offset="50%" stopColor="#facc15" />
-            <stop offset="50%" stopColor="#d1d5db" />
-          </linearGradient>
-        </defs>
-      </svg>
-    </div>
-  );
-};
+        // 綁定文章點擊事件
+        document.querySelectorAll('.post-card').forEach(card => {
+            card.onclick = (e) => {
+                const postId = e.currentTarget.getAttribute('data-post-id');
+                const post = siteData.posts.find(p => p.id == postId);
+                setState({ page: 'post', selectedPost: post });
+            };
+        });
 
-// 這是主要的 App 元件，包含了所有頁面和邏輯
-const App = () => {
-  // 網站的硬編碼資料
-  const posts = [
-    {
-      id: 1,
-      type: 'travel',
-      title: '京都櫻花之旅：在哲學之道漫步',
-      excerpt: '京都的春天是櫻花的盛會，而在哲學之道上...',
-      content: '京都的春天是櫻花的盛會，而在哲學之道上，沿著蜿蜒的小徑漫步，兩旁櫻花盛開，落英繽紛，彷彿置身於粉色的夢境。我們拜訪了清水寺、金閣寺，也品嚐了道地的京料理。這趟旅程讓身心都得到了療癒。',
-      imageUrl: 'https://placehold.co/800x600/6b7280/ffffff?text=Kyoto+Cherry+Blossoms',
-      rating: 5.0,
-      date: '2024年4月12日',
-    },
-    {
-      id: 2,
-      type: 'food',
-      title: '台北巷弄美食：隱藏版牛肉麵',
-      excerpt: '在台北的大街小巷中，總能發現一些令人驚喜的店家...',
-      content: '在台北的大街小巷中，總能發現一些令人驚喜的店家。這家位於巷弄內的牛肉麵店，湯頭濃郁，牛肉軟嫩入味，麵條Q彈有勁。每一口都充滿了幸福感。老闆熱情好客，店面雖然不大，但充滿了溫馨的氛圍。',
-      imageUrl: 'https://placehold.co/800x600/4b5563/ffffff?text=Taipei+Beef+Noodles',
-      rating: 4.5,
-      date: '2024年5月5日',
-    },
-    {
-      id: 3,
-      type: 'travel',
-      title: '冰島自駕冒險：追尋極光的旅程',
-      excerpt: '在冰島的冰天雪地中，我們駕車穿梭在壯麗的冰川和瀑布之間...',
-      content: '在冰島的冰天雪地中，我們駕車穿梭在壯麗的冰川和瀑布之間，每一步都像走進了國家地理雜誌的畫面。夜晚，我們在極光小屋中，靜靜地等待極光的出現。當綠色的光芒在夜空中舞動時，那種感動是難以言喻的。',
-      imageUrl: 'https://placehold.co/800x600/374151/ffffff?text=Iceland+Aurora',
-      rating: 4.8,
-      date: '2024年3月1日',
-    },
-    {
-      id: 4,
-      type: 'food',
-      title: '巴黎甜點巡禮：馬卡龍與可麗露',
-      excerpt: '巴黎不只是浪漫之都，更是甜點愛好者的天堂...',
-      content: '巴黎不只是浪漫之都，更是甜點愛好者的天堂。這次的甜點巡禮，我們從香榭麗舍大道上的百年老店，吃到巷弄內的小巧甜點店。最令人難忘的是那顆入口即化的馬卡龍，以及外酥內軟的可麗露。',
-      imageUrl: 'https://placehold.co/800x600/1f2937/ffffff?text=Paris+Desserts',
-      rating: 4.9,
-      date: '2024年6月10日',
-    },
-  ];
+        // 綁定返回按鈕
+        const backBtn = document.getElementById('back-btn');
+        if (backBtn) {
+            backBtn.onclick = () => setState({ page: 'home', selectedPost: null });
+        }
 
-  // 頁面狀態管理
-  const [currentPage, setCurrentPage] = useState('home');
-  const [selectedPost, setSelectedPost] = useState(null);
+        // 綁定評論表單
+        const commentForm = document.getElementById('comment-form');
+        if (commentForm) {
+            commentForm.onsubmit = (e) => {
+                e.preventDefault();
+                const user = appState.userData?.nickname || appState.user?.email || '匿名用戶';
+                const text = document.getElementById('comment-text').value;
+                if (text.trim() === '') return;
+                
+                const newComment = {
+                    id: appState.selectedPost.comments.length + 1,
+                    user,
+                    text
+                };
+                appState.selectedPost.comments.push(newComment);
+                
+                renderApp(appState, document.getElementById('root'));
+            };
+        }
+        
+        // 綁定分享按鈕
+        const shareBtn = document.getElementById('share-btn');
+        if (shareBtn && navigator.share) {
+            shareBtn.onclick = async () => {
+                try {
+                    await navigator.share({
+                        title: appState.selectedPost.title,
+                        text: appState.selectedPost.content.substring(0, 100) + '...',
+                        url: window.location.href,
+                    });
+                } catch (error) {
+                    console.error('分享失敗', error);
+                }
+            };
+        }
 
-  // 導航列元件
-  const Header = () => (
-    <nav className="bg-white p-4 sticky top-0 z-50 shadow-md">
-      <div className="container mx-auto flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800 cursor-pointer" onClick={() => setCurrentPage('home')}>我的遊食日記</h1>
-        <div className="space-x-4">
-          <button className="text-gray-600 hover:text-gray-900 transition" onClick={() => setCurrentPage('home')}>首頁</button>
-          <button className="text-gray-600 hover:text-gray-900 transition" onClick={() => setCurrentPage('about')}>關於我</button>
-          <button className="text-gray-600 hover:text-gray-900 transition" onClick={() => setCurrentPage('posts')}>分享</button>
-        </div>
-      </div>
-    </nav>
-  );
+        // 綁定會員功能按鈕
+        document.getElementById('login-btn')?.addEventListener('click', () => showModal('login'));
+        document.getElementById('register-btn')?.addEventListener('click', () => showModal('register'));
+        document.getElementById('logout-btn')?.addEventListener('click', async () => {
+            try {
+                await window.auth.signOut();
+                showMessageModal('登出成功');
+            } catch (error) {
+                showMessageModal(`登出失敗: ${error.message}`);
+            }
+        });
 
-  // 關於我頁面
-  const About = () => (
-    <div className="max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg mt-8 mb-8">
-      <h2 className="text-4xl font-extrabold text-gray-900 mb-6 border-b-2 pb-2">關於我</h2>
-      <div className="flex flex-col md:flex-row items-center md:space-x-8">
-        <div className="flex-shrink-0 mb-6 md:mb-0">
-          <img src="https://placehold.co/200x200/e5e7eb/4b5563?text=My+Photo" alt="個人照片" className="rounded-full w-48 h-48 object-cover shadow-lg" />
-        </div>
-        <div>
-          <p className="text-gray-700 text-lg leading-relaxed mb-4">
-            嗨！我是 [你的名字]，一個熱愛旅行和尋找美食的冒險家。我的旅程不只是為了看見壯麗的風景，更是為了用味蕾感受每個地方獨特的文化與故事。
-          </p>
-          <p className="text-gray-700 text-lg leading-relaxed">
-            這個網站記錄了我走過的每個城市，品嚐過的每道佳餚。我希望這些分享能為你的下一次旅程帶來靈感，或是簡單地為你的一天增添一些美好的想像。期待與你在世界的某個角落相遇！
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+        // 綁定 Modal 內按鈕
+        document.getElementById('modal-content')?.addEventListener('click', (e) => {
+            if (e.target.id === 'close-modal') {
+                hideModal();
+            }
+            if (e.target.id === 'switch-to-register') {
+                showModal('register');
+            }
+            if (e.target.id === 'switch-to-login') {
+                showModal('login');
+            }
+            if (e.target.id === 'switch-to-reset') {
+                showModal('reset');
+            }
+        });
 
-  // 文章列表中的單篇文章卡片
-  const PostCard = ({ post }) => (
-    <div
-      onClick={() => {
-        setSelectedPost(post);
-        setCurrentPage('postDetail');
-      }}
-      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden cursor-pointer"
-    >
-      <img src={post.imageUrl} alt={post.title} className="w-full h-56 object-cover" />
-      <div className="p-6">
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">{post.title}</h3>
-        <p className="text-sm text-gray-500 mb-4">{post.date}</p>
-        <p className="text-gray-600 line-clamp-3 mb-4">{post.excerpt}</p>
-        <div className="flex justify-between items-center">
-          <Rating score={post.rating} />
-          <span className="text-sm font-semibold text-gray-500">{post.rating.toFixed(1)} / 5</span>
-        </div>
-      </div>
-    </div>
-  );
+        // 綁定登入表單
+        document.getElementById('login-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = e.target.email.value;
+            const password = e.target.password.value;
+            try {
+                await signInWithEmailAndPassword(window.auth, email, password);
+                showMessageModal('登入成功！', () => hideModal());
+            } catch (error) {
+                showMessageModal(`登入失敗: ${error.message}`);
+            }
+        });
 
-  // 文章列表頁面
-  const PostList = () => (
-    <div className="container mx-auto p-8">
-      <h2 className="text-4xl font-extrabold text-gray-900 mb-8 text-center">所有分享</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {posts.map(post => (
-          <PostCard key={post.id} post={post} />
-        ))}
-      </div>
-    </div>
-  );
+        // 綁定註冊表單
+        document.getElementById('register-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = e.target.email.value;
+            const password = e.target.password.value;
+            const name = e.target.name.value;
+            const nickname = e.target.nickname.value;
+            const phone = e.target.phone.value;
+            const dob = e.target.dob.value;
+            const address = e.target.address.value;
+            
+            try {
+                const userCredential = await createUserWithEmailAndPassword(window.auth, email, password);
+                const user = userCredential.user;
+                
+                await setDoc(doc(window.db, 'users', user.uid), {
+                    name,
+                    nickname,
+                    phone,
+                    dob,
+                    address,
+                    email
+                });
+                showMessageModal('註冊成功！', () => hideModal());
+            } catch (error) {
+                showMessageModal(`註冊失敗: ${error.message}`);
+            }
+        });
 
-  // 單篇文章詳細頁面
-  const PostDetail = ({ post }) => (
-    <div className="max-w-4xl mx-auto p-8 mt-8 mb-8 bg-white rounded-xl shadow-lg">
-      <div className="flex items-center mb-6 text-gray-600">
-        <button onClick={() => setCurrentPage('posts')} className="flex items-center space-x-2 hover:text-gray-900 transition">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd"></path>
-          </svg>
-          <span>返回分享列表</span>
-        </button>
-      </div>
+        // 綁定忘記密碼表單
+        document.getElementById('reset-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = e.target.email.value;
+            try {
+                await sendPasswordResetEmail(window.auth, email);
+                showMessageModal('密碼重設郵件已寄送，請檢查您的信箱！', () => hideModal());
+            } catch (error) {
+                showMessageModal(`密碼重設失敗: ${error.message}`);
+            }
+        });
+    }
 
-      <h2 className="text-4xl font-extrabold text-gray-900 mb-4">{post.title}</h2>
-      <div className="flex items-center justify-between mb-6 border-b pb-4">
-        <p className="text-gray-500">{post.date}</p>
-        <div className="flex items-center space-x-2">
-          <Rating score={post.rating} />
-          <span className="text-lg font-semibold text-gray-500">{post.rating.toFixed(1)} / 5</span>
-        </div>
-      </div>
-      <img src={post.imageUrl} alt={post.title} className="w-full rounded-xl object-cover mb-8 shadow-md" />
-      <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">{post.content}</p>
-    </div>
-  );
+    // 簡單的狀態管理
+    let appState = {
+        page: 'home',
+        selectedPost: null,
+        user: null,
+        userData: null,
+    };
 
-  // 根據 currentPage 狀態來渲染不同的頁面
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'home':
-        return (
-          <div className="container mx-auto p-8">
-            <div className="bg-white rounded-xl shadow-lg p-12 text-center my-8">
-              <h2 className="text-5xl font-extrabold text-gray-900 mb-4">歡迎來到我的遊食日記</h2>
-              <p className="text-xl text-gray-600 mb-6">在這裡，我用鏡頭和文字記錄每一次的探索與感動</p>
-              <button
-                onClick={() => setCurrentPage('posts')}
-                className="bg-gray-800 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-gray-700 transition"
-              >
-                開始閱讀
-              </button>
+    function setState(newState) {
+        appState = { ...appState, ...newState };
+        renderApp(appState, document.getElementById('root'));
+    }
+
+    // 組件：導航列
+    const Navbar = () => `
+        <nav class="bg-gray-800/50 backdrop-blur-md p-4 sticky top-0 z-50 rounded-b-xl border-b-2 border-gold-dark shadow-xl">
+            <div class="flex justify-between items-center max-w-7xl mx-auto">
+                <a href="#" class="text-2xl font-playfair text-gold-light tracking-wide nav-link" data-page="home">
+                    旅行美食誌
+                </a>
+                <div class="flex space-x-4 text-sm sm:text-base items-center">
+                    <a href="#" class="nav-link text-white hover:text-gold-light transition-colors duration-300" data-page="home">首頁</a>
+                    <a href="#" class="nav-link text-white hover:text-gold-light transition-colors duration-300" data-page="about">關於我</a>
+                    ${appState.user ? `
+                        <span class="text-white">${appState.userData?.nickname || appState.user.email}</span>
+                        <button id="logout-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-300">
+                            登出
+                        </button>
+                    ` : `
+                        <button id="login-btn" class="px-4 py-2 bg-gold-dark hover:bg-gold-light text-white rounded-lg transition-colors duration-300">
+                            登入
+                        </button>
+                        <button id="register-btn" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors duration-300">
+                            註冊
+                        </button>
+                    `}
+                </div>
             </div>
-            <PostList />
-          </div>
-        );
-      case 'about':
-        return <About />;
-      case 'posts':
-        return <PostList />;
-      case 'postDetail':
-        return <PostDetail post={selectedPost} />;
-      default:
-        return null;
+        </nav>
+    `;
+
+    // 組件：首頁
+    const HomePage = () => `
+        ${Navbar()}
+        <div class="py-12">
+            <h1 class="text-4xl sm:text-5xl font-playfair text-center text-gold-light mb-8 animate-fade-in">探索世界的美味與風景</h1>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                ${siteData.posts.map(post => PostCard(post)).join('')}
+            </div>
+        </div>
+    `;
+
+    // 組件：文章卡片
+    const PostCard = (post) => `
+        <div data-post-id="${post.id}" class="post-card bg-dark-gray rounded-xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-500 cursor-pointer border-2 border-transparent hover:border-gold-dark">
+            <img src="${post.image}" alt="${post.title}" class="w-full h-48 object-cover object-center">
+            <div class="p-6">
+                <h2 class="text-xl font-playfair text-gold-light mb-2">${post.title}</h2>
+                <div class="flex items-center text-sm text-gray-400 mb-4">
+                    <span class="mr-2">${post.author}</span>
+                    <span class="mr-2">•</span>
+                    <span>${post.date}</span>
+                </div>
+                ${RatingStars(post.rating)}
+                <p class="text-gray-300 mt-4 line-clamp-3">${post.content}</p>
+            </div>
+        </div>
+    `;
+
+    // 組件：文章內頁
+    const PostPage = (post) => `
+        ${Navbar()}
+        <div class="py-12 max-w-3xl mx-auto animate-fade-in">
+            <button id="back-btn" class="mb-6 px-4 py-2 bg-gray-700 hover:bg-gold-dark text-white rounded-lg transition-colors duration-300">
+                &larr; 返回
+            </button>
+            <article class="bg-dark-gray rounded-xl shadow-2xl p-6 sm:p-10">
+                <h1 class="text-3xl sm:text-4xl font-playfair text-gold-light mb-4">${post.title}</h1>
+                <div class="flex items-center text-sm text-gray-400 mb-6">
+                    <span class="mr-2">${post.author}</span>
+                    <span class="mr-2">•</span>
+                    <span>${post.date}</span>
+                </div>
+                ${RatingStars(post.rating)}
+                <img src="${post.image}" alt="${post.title}" class="w-full h-auto rounded-lg my-6 shadow-xl">
+                <p class="text-gray-200 leading-loose">${post.content}</p>
+
+                <!-- 分享按鈕 -->
+                <div class="mt-8 flex justify-center">
+                    <button id="share-btn" class="px-6 py-3 bg-gold-dark text-white font-bold rounded-full shadow-lg hover:bg-gold-light transition-colors duration-300">
+                        分享此遊記
+                    </button>
+                </div>
+            </article>
+
+            <!-- 評論區塊 -->
+            <div class="mt-12 bg-dark-gray rounded-xl shadow-2xl p-6 sm:p-8">
+                <h2 class="text-2xl font-playfair text-gold-light mb-6">評論區</h2>
+                <div id="comments-list" class="space-y-4 mb-6 max-h-96 overflow-y-auto">
+                    ${post.comments.map(comment => Comment(comment)).join('')}
+                </div>
+                <form id="comment-form" class="space-y-4">
+                    <textarea id="comment-text" rows="4" placeholder="${appState.user ? '留下你的評論...' : '請登入後留下評論...'}" class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gold-dark focus:outline-none" ${appState.user ? '' : 'disabled'} required></textarea>
+                    <button type="submit" class="w-full px-6 py-3 bg-gold-dark text-white font-bold rounded-lg shadow-lg hover:bg-gold-light transition-colors duration-300 ${appState.user ? '' : 'opacity-50 cursor-not-allowed'}" ${appState.user ? '' : 'disabled'}>
+                        送出評論
+                    </button>
+                </form>
+            </div>
+        </div>
+    `;
+
+    // 組件：評論
+    const Comment = (comment) => `
+        <div class="bg-gray-700 p-4 rounded-lg">
+            <p class="font-bold text-gray-300">${comment.user}</p>
+            <p class="text-gray-400 mt-1">${comment.text}</p>
+        </div>
+    `;
+
+    // 組件：關於我頁面
+    const AboutPage = () => `
+        ${Navbar()}
+        <div class="py-12 max-w-3xl mx-auto animate-fade-in">
+            <article class="bg-dark-gray rounded-xl shadow-2xl p-6 sm:p-10">
+                <h1 class="text-3xl sm:text-4xl font-playfair text-gold-light mb-4 text-center">關於我</h1>
+                <div class="flex justify-center mb-6">
+                    <img src="https://placehold.co/150x150/50576A/FFFFFF?text=My+Photo" alt="我的頭像" class="w-36 h-36 rounded-full border-4 border-gold-dark shadow-lg">
+                </div>
+                <p class="text-gray-200 leading-loose text-center">
+                    嗨！我是這網站的創作者，一位熱愛旅行與美食的探險家。我始終相信，最好的故事都在旅途中，而最深刻的記憶，往往藏在每一口食物裡。希望透過這個網站，將我在世界各地的發現與感動，分享給所有同樣對生活充滿熱情的朋友們。讓我們一起用腳步丈量世界，用味蕾感受文化吧！
+                </p>
+                <div class="mt-8 text-center">
+                    <p class="text-gold-light">感謝您的來訪！</p>
+                </div>
+            </article>
+        </div>
+    `;
+
+    // 組件：評分星星
+    const RatingStars = (score) => {
+        const fullStars = Math.floor(score);
+        const hasHalfStar = score % 1 !== 0;
+        let stars = '';
+        
+        // 渲染實心星星
+        for (let i = 0; i < fullStars; i++) {
+            stars += `<svg class="w-6 h-6 text-gold-light fill-current inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.27l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>`;
+        }
+        
+        // 渲染半顆星星
+        if (hasHalfStar) {
+            stars += `<svg class="w-6 h-6 text-gold-light fill-current inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2L9.09 8.26L2 9.27l5 4.87-1.18 6.88L12 17.27l6.18 3.25L17 14.14l5-4.87l-7.09-1.01L12 2zM12 4.15L14.71 9.87L21 10.88l-4.5 4.38L17.58 21L12 18.27V4.15z"/></svg>`;
+        }
+        
+        // 渲染空心星星
+        const remainingStars = 5 - Math.ceil(score);
+        for (let i = 0; i < remainingStars; i++) {
+            stars += `<svg class="w-6 h-6 text-gray-400 fill-current inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2L9.09 8.26L2 9.27l5 4.87-1.18 6.88L12 17.27l6.18 3.25L17 14.14l5-4.87l-7.09-1.01L12 2zM12 4.15L14.71 9.87L21 10.88l-4.5 4.38L17.58 21L12 18.27l-5.58 2.73L7.5 15.26l-4.5-4.38l6.29-0.9L12 4.15z"/></svg>`;
+        }
+
+        return `<div class="flex items-center space-x-1">${stars}</div>`;
+    };
+
+    // Modal 視窗功能
+    const modalBackdrop = document.getElementById('modal-backdrop');
+    const modalContent = document.getElementById('modal-content');
+
+    function showModal(type) {
+        modalBackdrop.classList.remove('hidden');
+        modalContent.innerHTML = ModalContent(type);
+        bindEvents(); // 重新綁定事件
     }
-  };
 
-  return (
-    <div className="bg-gray-100 min-h-screen font-sans">
-      <Header />
-      {renderPage()}
-    </div>
-  );
-};
+    function hideModal() {
+        modalBackdrop.classList.add('hidden');
+    }
 
-export default App;
+    function showMessageModal(message, callback) {
+        modalBackdrop.classList.remove('hidden');
+        modalContent.innerHTML = `
+            <div class="text-center">
+                <p class="text-xl font-bold mb-4">${message}</p>
+                <button id="close-modal" class="px-6 py-2 bg-gold-dark text-white rounded-lg hover:bg-gold-light transition-colors duration-300">
+                    關閉
+                </button>
+            </div>
+        `;
+        document.getElementById('close-modal').onclick = () => {
+            hideModal();
+            if (callback) callback();
+        };
+    }
+
+    const ModalContent = (type) => {
+        switch(type) {
+            case 'login':
+                return `
+                    <div class="text-center">
+                        <h2 class="text-3xl font-playfair text-gold-light mb-6">會員登入</h2>
+                        <form id="login-form" class="space-y-4">
+                            <input type="email" name="email" placeholder="電子郵件" required class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gold-dark focus:outline-none">
+                            <input type="password" name="password" placeholder="密碼" required class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gold-dark focus:outline-none">
+                            <button type="submit" class="w-full px-6 py-3 bg-gold-dark text-white font-bold rounded-lg shadow-lg hover:bg-gold-light transition-colors duration-300">
+                                登入
+                            </button>
+                        </form>
+                        <div class="mt-4 text-sm text-gray-400">
+                            <a href="#" id="switch-to-register" class="text-gold-light hover:underline">還沒有帳號？點此註冊</a>
+                            <a href="#" id="switch-to-reset" class="block mt-2 text-gray-500 hover:underline">忘記密碼？</a>
+                        </div>
+                    </div>
+                `;
+            case 'register':
+                return `
+                    <div class="text-center">
+                        <h2 class="text-3xl font-playfair text-gold-light mb-6">會員註冊</h2>
+                        <form id="register-form" class="space-y-4">
+                            <input type="email" name="email" placeholder="電子郵件" required class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gold-dark focus:outline-none">
+                            <input type="password" name="password" placeholder="密碼 (至少6個字元)" required class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gold-dark focus:outline-none">
+                            <hr class="border-t border-gray-600 my-4">
+                            <input type="text" name="name" placeholder="姓名" class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gold-dark focus:outline-none">
+                            <input type="text" name="nickname" placeholder="暱稱" required class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gold-dark focus:outline-none">
+                            <input type="tel" name="phone" placeholder="電話" class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gold-dark focus:outline-none">
+                            <input type="date" name="dob" placeholder="生日" class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gold-dark focus:outline-none">
+                            <input type="text" name="address" placeholder="地址" class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gold-dark focus:outline-none">
+                            <button type="submit" class="w-full px-6 py-3 bg-gold-dark text-white font-bold rounded-lg shadow-lg hover:bg-gold-light transition-colors duration-300">
+                                註冊
+                            </button>
+                        </form>
+                        <div class="mt-4 text-sm text-gray-400">
+                            <a href="#" id="switch-to-login" class="text-gold-light hover:underline">已經有帳號？點此登入</a>
+                        </div>
+                    </div>
+                `;
+            case 'reset':
+                return `
+                    <div class="text-center">
+                        <h2 class="text-3xl font-playfair text-gold-light mb-6">忘記密碼</h2>
+                        <p class="text-gray-400 mb-4">請輸入您的註冊信箱，我們將會寄送密碼重設連結給您。</p>
+                        <form id="reset-form" class="space-y-4">
+                            <input type="email" name="email" placeholder="電子郵件" required class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gold-dark focus:outline-none">
+                            <button type="submit" class="w-full px-6 py-3 bg-gold-dark text-white font-bold rounded-lg shadow-lg hover:bg-gold-light transition-colors duration-300">
+                                送出
+                            </button>
+                        </form>
+                        <div class="mt-4 text-sm text-gray-400">
+                            <a href="#" id="switch-to-login" class="text-gold-light hover:underline">返回登入頁</a>
+                        </div>
+                    </div>
+                `;
+        }
+    };
+    
+    // 初始化應用程式
+    window.onload = () => {
+        const root = document.getElementById('root');
+        renderApp(appState, root);
+    };
+</script>
+
+</body>
+</html>
 
